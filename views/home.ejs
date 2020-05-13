@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeForces Stalker</title>
+     <!-- add icon link -->
+        <link rel = "icon" href =  
+"https://i.pinimg.com/originals/0f/8b/28/0f8b2870896edcde8f6149fe2733faaf.jpg" 
+        type = "image/x-icon"> 
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="Colorlib Templates">
     <meta name="author" content="Colorlib">
@@ -32,27 +36,25 @@
             <div class="card card-4">
                 <div class="card-body">
                     <h2 class="title">CodeForces Stalker</h2>
-                    <form id="form" method="POST" action="/postSubmissions">
+                    <form id="form" method="POST" action="/details">
                         <div class="row row-space">
                             <div class="col-2">
                                 <div class="input-group">
                                     <label class="label">UserId</label>
-                                    <input class="input--style-4" id="req" type="text" name="nick">
+                                    <input class="input--style-4" id="req" type="text" name="nick" placeholder="Enter Nick Here">
                                 </div>
                             </div>
                         </div>
                             
                         <div class="p-t-15">
                             <button id="stalk" class="btn btn--radius-2 btn--blue" type="submit">Stalk</button>
-                            <% if(done===2){ %>
-                            <button id="down-btn" formaction="/downloadSubmissions" class="btn btn--radius-2 btn--blue" type="submit">Download Solutions</button>
-                            <img id="down-load" src="https://i.imgur.com/b96dOB0.gif">
-                            <% } %>
                         </div>
                     </form>   
                      <br>
                     <% if(done===2){ %>
-                        <a class="label handle" target="_blank" href="<%= URL %>">CodeForces Handle</a>
+                        <a href="/downloadSubmissions/<%=nick%>" class="label handle" target="_blank">Download Solutions</a>
+                        <a class="label handle" target="_blank" href="<%= URL %>">CodeForces Handle</a>                        
+                        <p class="nick">Nick: <%= nick %></p>
                         <p class="label">Total Submissions: <%= total %></p>
                         <p class="label">Accuracy: <%= accuracy %>% </p>
                         <p class="label">Highest Rating Question Solved: <%= quesRating %> </p>
@@ -87,6 +89,7 @@
     </div>
     <% if(done===2){ %>
         <script>
+           
              let ctx= document.getElementById('myChart').getContext('2d');
      
              Chart.defaults.global.defaultFontFamily= "Poppins";        
@@ -150,14 +153,11 @@
         </script> 
      <% } %>
     <script>
-        $('#down-btn').on('click',function(){
-            $('#down-load').fadeIn();
-        });
         $('#stalk').on('click', function(){
+            
             $('#loader-wrapper').fadeIn();
         });
         $(window).on('load',function(){
-          $('#down-load').fadeOut("slow");
           $('#loader-wrapper').fadeOut("slow");
         });
     </script>
