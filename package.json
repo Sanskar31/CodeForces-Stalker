@@ -14,7 +14,7 @@
   "author": "Sanskar Agarwal",
   "license": "ISC",
   "dependencies": {
-    "archiver": "^4.0.1",
+    "adm-zip": "^0.4.16",
     "chart.js": "^2.9.3",
     "cheerio": "^1.0.0-rc.3",
     "ejs": "^3.1.2",

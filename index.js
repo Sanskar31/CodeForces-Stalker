@@ -3,13 +3,7 @@ All Imports
 */
 const express= require('express');
 const path= require('path');
-const request= require('request');
-const rp = require('request-promise');
 const bodyParser = require('body-parser');
-const cheerio= require('cheerio');
-const fs= require('fs');
-const archiver = require('archiver');
-const { zip } = require('zip-a-folder');
 
 const app= express();
 

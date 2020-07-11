@@ -5,6 +5,6 @@ const controller= require('../controllers/userController');
 const router = express.Router();
 
 router.post('/details', controller.getDetails);
-router.get('/downloadSubmissions/:nick', controller.downloadSolutions);
+router.post('/downloadSubmissions/:nick', controller.downloadSolutions);
 
 module.exports= router;

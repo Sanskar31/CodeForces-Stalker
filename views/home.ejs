@@ -52,7 +52,11 @@
                     </form>   
                      <br>
                     <% if(done===2){ %>
-                        <a href="/downloadSubmissions/<%=nick%>" class="label handle" target="_blank">Download Solutions</a>
+                        <form method="POST" action="/downloadSubmissions/<%=nick%>" target="_blank">
+                            <input type="hidden" value= <%=ac%> name="ac" >
+                            <input type="hidden" value= <%=nick%> name="nick" >
+                            <button id="stalk" class="btn btn--radius-2 btn--blue" type="submit">Download Submissions</button>
+                        </form>
                         <a class="label handle" target="_blank" href="<%= URL %>">CodeForces Handle</a>                        
                         <p class="nick">Nick: <%= nick %></p>
                         <p class="label">Total Submissions: <%= total %></p>
