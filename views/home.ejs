@@ -92,7 +92,7 @@
                      <p class="subtitle is-6 ">Compilation Error: <%= compilation %></p>
                      <p class="subtitle is-6 ">Hacked: <%= hacked %></p>
                      <p class="subtitle is-6 ">Others: <%= other %></p>
-                     <div class="label">
+                     <div class="chart-container" style="maintainAspectRatio: false;">
                         <canvas id="myChart"></canvas>
                      </div>
                      <% }else if(done===1){ %>
@@ -147,12 +147,14 @@
                  title: {
                      display: true,
                      text: "Submission Chart",
-                     fontSize: 25
+                     fontSize: 25,
+                     fontFamily: "Segoe UI"
                  },
                  legend: {
                      position: 'right',
                      labels: {
-                         fontColor: '#000'
+                        fontColor: '#000',
+                        fontFamily: "Segoe UI"
                      }
                  },
                  layout: {
