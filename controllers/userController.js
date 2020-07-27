@@ -8,7 +8,7 @@ const async = require("async");
 const { runInNewContext } = require("vm");
 const rimraf = require("rimraf");
 
-var appDir = './';
+var appDir = path.dirname(require.main.filename);
 
 exports.getDetails = async (req, res, next) => {
 	var total = 0,
