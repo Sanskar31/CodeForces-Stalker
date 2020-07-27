@@ -4,11 +4,14 @@ const cheerio = require('cheerio');
 const fs= require('fs');
 const path= require('path');
 const AdmZip = require('adm-zip');
+const async= require('async');
+const { runInNewContext } = require('vm');
+const rimraf = require("rimraf");
 
 var appDir = path.dirname(require.main.filename);
 
-exports.getDetails= (req, res, next) => {
-    var total=0, ac=0, wrong=0, tle=0, runtime=0, memorylimit=0, other=0, compilation=0, hacked=0, done=0, maxRatingQuestion=0,fetched=0;
+exports.getDetails= async (req, res, next) => {
+    var total=0, ac=0, wrong=0, tle=0, runtime=0, memorylimit=0, other=0, compilation=0, hacked=0, done=0, maxRatingQuestion=0;
     //Getting Params From Request
     var nick= req.body.nick;
     handle= nick.toString();
@@ -18,39 +21,24 @@ exports.getDetails= (req, res, next) => {
     const url= 'https://codeforces.com/api/user.status?handle='+nick;       
     
     //Making a request to the api
-    rp(url, (err, res, body) => {
+    request(url, (err, response, body) => {
         //If UserId is Invalid
-        if(res.statusCode===400){
+        if(response.statusCode===400){
             done=1;
             // console.log("Invalid UserId!");
+            return res.render('home', {
+                done: done
+            })
         }
         //Otherwise get user details
-        else if(res.statusCode===200){
+        else if(response.statusCode===200){
             done= 2;
             var jsonObject = JSON.parse(body);
             var result= jsonObject.result;
             //Map to get rid of multiple accepted submissions of a given problem
             let probMap = new Map();
             //Result is an array of all the submissions
-            const folderPath= path.join(appDir, 'data', nick);
-            console.log(folderPath);
-            if (fs.existsSync(folderPath)){
-                // console.log(folderPath);
-                fs.rmdir(folderPath, (err) => {
-                    if (err) {
-                        throw err;
-                    }
-                    console.log(`${folderPath} is deleted!`);
-                });
-            }
-            while(fs.existsSync(folderPath));
-            fs.mkdir(folderPath, err =>{
-                if(err){
-                    console.log(err);
-                }
-            });
-
-            result.forEach((solution) => {
+            async.forEach(result,function(solution, callback){
                 total= total+1;
                 //If conditions to keep count of all the verdicts
                 if(solution.verdict==="OK"){
@@ -58,31 +46,12 @@ exports.getDetails= (req, res, next) => {
                     if(maxRatingQuestion<rating){
                         maxRatingQuestion= rating;
                     }
-                    var id= solution.id;
-                    var contestId= solution.contestId;
                     //Removing any special characters from the problem name & also removing spaces
                     var problemName= solution.problem.name.split(/\s/).join('').replace(/[^a-zA-Z ]/g, "");
                     if(!probMap.has(problemName)){                    
                         ac= ac+1;
                         probMap.set(problemName, 1);
-                        var solutionUrl= "https://codeforces.com/contest/" + contestId + "/submission/"+id;
-
-                        request(solutionUrl, (err, res, html) => {
-                            if(!err && res.statusCode===200){
-                                // console.log("HELLO");
-                                fetched= fetched+1;
-                                const $= cheerio.load(html);
-                                const solutionBody= $('.linenums');
-                                const code= solutionBody.text();
-                                var fileName= problemName+'.cpp';
-                                const dirPath = path.join(appDir, 'data', nick, fileName);
-                                const writeStream= fs.createWriteStream(dirPath);
-                                // console.log(code);
-                                writeStream.write(code);
-                            }
-                        });
                     }
-                    
                 }
                 else if(solution.verdict==="WRONG_ANSWER"){
                     wrong= wrong+1;
@@ -105,47 +74,49 @@ exports.getDetails= (req, res, next) => {
                 else{
                     other= other+1;
                 }
+                callback();
+                // callback(() => {
+                //     console.log(total);
+                // }); //notify that this iteration is complete
+            }, (err) => {
+                if(err){
+                    console.log(err);
+                    return res.render('home', {
+                        done: 1
+                    });
+                }
+                var user= nick;
+                URL= "https://codeforces.com/profile/"+nick;
+                var accuracy= 0;
+                if(total!==0){
+                    accuracy= (ac/total)*100;
+                }
+                accuracy= accuracy.toFixed(2);
+                return res.render('home', { 
+                    nick: user,
+                    URL: URL,
+                    total: total,
+                    accuracy: accuracy,
+                    ac: ac,
+                    tle: tle,
+                    wrong: wrong, 
+                    runtime:runtime, 
+                    memorylimit: memorylimit,
+                    compilation: compilation,
+                    hacked: hacked,
+                    other: other,
+                    quesRating: maxRatingQuestion,
+                    done: done
+                });
             });
-            const dataPath= path.join(appDir, 'data', nick); 
-            var uploadDir = fs.readdirSync(dataPath); 
         }
-    })
-    .then(() => {
-        var user= nick;
-        URL= "https://codeforces.com/profile/"+nick;
-        var accuracy= 0;
-        if(total!==0){
-            accuracy= (ac/total)*100;
-        }
-        accuracy= accuracy.toFixed(2);
-        res.render('home', { 
-            nick: user,
-            URL: URL,
-            total: total,
-            accuracy: accuracy,
-            ac: ac,
-            tle: tle,
-            wrong: wrong, 
-            runtime:runtime, 
-            memorylimit: memorylimit,
-            compilation: compilation,
-            hacked: hacked,
-            other: other,
-            quesRating: maxRatingQuestion,
-            done: done
-        });
-    })
-    .catch((err) => {
-        // console.log(err);
-        res.render('home', {
-            done: 1
-        });
     });
-    
 };
 
-exports.downloadSolutions= (req,res,next) => {
-    const nick= req.body.nick;
+
+//function to create zip file
+var createZip = async (obj) => {
+    const nick= obj.nick;
     const dataPath= path.join(appDir, 'data', nick); 
     var uploadDir = fs.readdirSync(dataPath); 
     const zip = new AdmZip();
@@ -156,18 +127,105 @@ exports.downloadSolutions= (req,res,next) => {
     }
  
     // Define zip file name
-    const downloadName = nick+'.zip';
- 
+    let downloadName = nick+'.zip';
+    obj.downloadName= downloadName;
+
     const data = zip.toBuffer();
  
     // save file zip in root directory
     var zipPath= path.join(appDir, 'download', downloadName);
     zip.writeZip(zipPath);
+
+    return data;
+};
+
+var createFile= (dirPath, code) => {
+    Path= dirPath.toString();
+    fs.writeFileSync(Path, code, (err) => {
+        console.log(err);
+    });
+};
+
+exports.downloadSolutions= (req,res,next) => {
+    var nick= req.body.nick;
+    nick= nick.split(/\s/).join('');
+
+
+    const url= 'https://codeforces.com/api/user.status?handle='+nick;       
     
-    // code to download zip file
- 
-    res.set('Content-Type','application/octet-stream');
-    res.set('Content-Disposition',`attachment; filename=${downloadName}`);
-    res.set('Content-Length',data.length);
-    res.send(data);
+    //Making a request to the api
+    request(url, (err, response, body) => {
+        //Otherwise get user details
+        if(response.statusCode===200){
+
+            var jsonObject = JSON.parse(body);
+            var result= jsonObject.result;
+
+            const folderPath= path.join(appDir, 'data', nick);
+
+            rimraf(folderPath, () => {
+                fs.mkdir(folderPath, err =>{
+                    if(err){
+                        console.log(err);
+                    }
+                });
+    
+                async.eachSeries(result,async function(solution, callback){
+                    //If conditions to keep count of all the verdicts
+                    var dirPath;
+                    var lang= solution.programmingLanguage.toString();
+                    lang= lang.substring(4,7);
+                    if(solution.verdict==="OK" && lang==="C++"){
+    
+                        var problemName= solution.problem.name.split(/\s/).join('').replace(/[^a-zA-Z ]/g, "");
+                        
+                        var id= solution.id;
+                        var contestId= solution.contestId;
+                        var solutionUrl= "https://codeforces.com/contest/" + contestId + "/submission/"+id;
+                
+                        request(solutionUrl, async (err, res, html) => {
+                            if(!err && res.statusCode===200){
+                    
+                                async function f() {
+                                    var fileName= problemName+'.cpp';
+                                    dirPath = path.join(appDir, 'data', nick, fileName);
+                                    // console.log(dirPath);
+                                    const $= await cheerio.load(html);
+                                    const solutionBody= await $('.linenums');
+                                    return await solutionBody.text();
+                                }
+    
+                                f().then(result => {
+                                    callback(createFile(dirPath, result));
+                                });
+                            }
+                        });
+                    }
+                    else{
+                        callback();
+                    }
+                }, (err) => {
+                    if(err){
+                        console.log(err);
+                    }
+                    // code to download zip file
+                    var obj= {
+                        nick: nick,
+                        downloadName: ""
+                    };
+                    createZip(obj).then((data) => {
+                        res.set('Content-Type','application/octet-stream');
+                        res.set('Content-Disposition',`attachment; filename=${obj.downloadName}`);
+                        res.set('Content-Length',data.length);
+                        // console.log("All Files Downloaded!");
+                        res.send(data);
+                        var zipPath= path.join(appDir, 'download', obj.downloadName);
+                        rimraf.sync(zipPath);
+                        rimraf.sync(folderPath);
+                    })
+                    .catch(err => console.log(err));
+                });
+            });
+        }
+    });
 };

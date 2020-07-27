@@ -7,6 +7,8 @@ const bodyParser = require('body-parser');
 
 const app= express();
 
+const port= 3000;
+
 /*
 Setting View Engine
 */
@@ -26,6 +28,6 @@ app.get("/", (req, res, next) => {
     });
 });
 
-app.listen(3000, (result) => {
-    console.log('Connected!');
+app.listen(port, () => {
+    console.log('Connected On Port '+port+'!');
 });
