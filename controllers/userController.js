@@ -1,11 +1,9 @@
-const rp = require("request-promise");
 const request = require("request");
 const cheerio = require("cheerio");
 const fs = require("fs");
 const path = require("path");
 const AdmZip = require("adm-zip");
 const async = require("async");
-const { runInNewContext } = require("vm");
 const rimraf = require("rimraf");
 
 var appDir = path.dirname(require.main.filename);
@@ -28,7 +26,7 @@ exports.getDetails = async (req, res, next) => {
 	nick = nick.split(/\s/).join("");
 
 	//Making a URL
-	const url = "https://codeforces.com/api/user.status?handle=" + nick;
+	const url = `https://codeforces.com/api/user.status?handle=${nick}`;
 
 	//Making a request to the api
 	request(url, (err, response, body) => {
@@ -84,9 +82,6 @@ exports.getDetails = async (req, res, next) => {
 						other = other + 1;
 					}
 					callback();
-					// callback(() => {
-					//     console.log(total);
-					// }); //notify that this iteration is complete
 				},
 				(err) => {
 					if (err) {
@@ -97,7 +92,7 @@ exports.getDetails = async (req, res, next) => {
 						});
 					}
 					var user = nick;
-					URL = "https://codeforces.com/profile/" + nick;
+					URL = `https://codeforces.com/profile/${nick}`;
 					var accuracy = 0;
 					if (total !== 0) {
 						accuracy = (ac / total) * 100;
@@ -161,11 +156,10 @@ exports.downloadSolutions = (req, res, next) => {
 	var nick = req.body.nick;
 	nick = nick.split(/\s/).join("");
 
-	const url = "https://codeforces.com/api/user.status?handle=" + nick;
+	const url = `https://codeforces.com/api/user.status?handle=${nick}`;
 
 	//Making a request to the api
 	request(url, (err, response, body) => {
-		//Otherwise get user details
 		if (response.statusCode === 200) {
 			var jsonObject = JSON.parse(body);
 			var result = jsonObject.result;
@@ -194,11 +188,7 @@ exports.downloadSolutions = (req, res, next) => {
 
 							var id = solution.id;
 							var contestId = solution.contestId;
-							var solutionUrl =
-								"https://codeforces.com/contest/" +
-								contestId +
-								"/submission/" +
-								id;
+							var solutionUrl = `https://codeforces.com/contest/${contestId}/submission/${id}`;
 
 							request(solutionUrl, async (err, res, html) => {
 								if (!err && res.statusCode === 200) {
