@@ -20,6 +20,7 @@ exports.getDetails = async (req, res, next) => {
 		hacked = 0,
 		done = 0,
 		maxRatingQuestion = 0;
+
 	//Getting Params From Request
 	var nick = req.body.nick;
 	handle = nick.toString();
@@ -33,7 +34,6 @@ exports.getDetails = async (req, res, next) => {
 		//If UserId is Invalid
 		if (response.statusCode === 400) {
 			done = 1;
-			// console.log("Invalid UserId!");
 			return res.render("home", {
 				done: done,
 				nick: "",
@@ -51,20 +51,16 @@ exports.getDetails = async (req, res, next) => {
 				result,
 				function (solution, callback) {
 					total = total + 1;
-					//If conditions to keep count of all the verdicts
+					//If conditions to handle all the verdicts
 					if (solution.verdict === "OK") {
 						var rating = solution.problem.rating;
 						if (maxRatingQuestion < rating) {
 							maxRatingQuestion = rating;
 						}
 						//Removing any special characters from the problem name & also removing spaces
-						var problemName = solution.problem.name
-							.split(/\s/)
-							.join("")
-							.replace(/[^a-zA-Z ]/g, "");
-						if (!probMap.has(problemName)) {
+						if (!probMap.has(solution.problem.name)) {
 							ac = ac + 1;
-							probMap.set(problemName, 1);
+							probMap.set(solution.problem.name, 1);
 						}
 					} else if (solution.verdict === "WRONG_ANSWER") {
 						wrong = wrong + 1;
@@ -154,13 +150,15 @@ var createFile = (dirPath, code) => {
 
 exports.downloadSolutions = (req, res, next) => {
 	var nick = req.body.nick;
-	nick = nick.split(/\s/).join("");
 
 	const url = `https://codeforces.com/api/user.status?handle=${nick}`;
 
 	//Making a request to the api
 	request(url, (err, response, body) => {
-		if (response.statusCode === 200) {
+		if(err){
+			res.redirect('/');
+		}
+		else if (response.statusCode === 200) {
 			var jsonObject = JSON.parse(body);
 			var result = jsonObject.result;
 
@@ -172,7 +170,7 @@ exports.downloadSolutions = (req, res, next) => {
 						console.log(err);
 					}
 				});
-
+				// Using async.eachseries to fetch solutions one by one so as to avoid block from the website
 				async.eachSeries(
 					result,
 					async function (solution, callback) {
@@ -238,5 +236,9 @@ exports.downloadSolutions = (req, res, next) => {
 				);
 			});
 		}
+		else{
+			res.redirect('/');
+		}
 	});
+
 };
